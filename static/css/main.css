@@ -23,6 +23,11 @@ header {
     text-decoration: none;
 }
 
+.nav form {
+    display: inline-block;
+    padding: block;
+}
+
 footer {
     text-align: center;
 }

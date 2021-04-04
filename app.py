@@ -1,8 +1,13 @@
 from flask import Flask 
 from flask import render_template
+from flask import request
+from flask.helpers import url_for 
 from database import articles
+from flask import redirect
+from flask import session
 
 flask_app = Flask(__name__)
+flask_app.secret_key = b'\n\r\x0f\xc8\xf2@\xe7\xe5\xd7\x1a\x88\xdf\x1b\xf3\xde\x97l\xa0\xd8\xc2l[q"'
 
 @flask_app.route("/")
 def view_welcome_page():
@@ -14,6 +19,8 @@ def view_about():
 
 @flask_app.route("/admin/")
 def view_admin():
+	if "logged" not in session:
+		return redirect(url_for("view_login"))
 	return render_template("admin.jinja")
 
 @flask_app.route("/articles/")
@@ -28,3 +35,22 @@ def view_article(art_id):
 	return render_template("article_not_found.jinja", art_id=art_id)
 
 
+@flask_app.route("/login/", methods=["GET"])
+def view_login():
+	return render_template("login.jinja")
+
+@flask_app.route("/login/", methods=["POST"])
+def view_login_user():
+	username = request.form["username"]
+	password = request.form["password"]
+	if username == "admin" and password == "admin":
+		session["logged"] = True
+		return redirect(url_for("view_admin"))
+	else:
+		return redirect(url_for("view_login"))
+
+
+@flask_app.route("/logout/", methods = ["POST"])
+def logout_user():
+	session.pop("logged")
+	return redirect(url_for("view_welcome_page"))

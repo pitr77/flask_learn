@@ -11,7 +11,20 @@
     <h1> <a href= "{{ url_for("view_welcome_page") }}">  My blog </a> </h1>
 </header> 
 
-{% include "_nav.jinja" %}
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <ul class="flashes">
+        {% for category, message in messages %}
+            <li class="{{category}}"> {{message}} </li>
+        </ul>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<head>  
+    {% include "_nav.jinja" %}
+</head>
 
 <main>
     {% block main %}  

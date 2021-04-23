@@ -7,6 +7,7 @@ from database import articles
 from flask import redirect
 from flask import session
 from flask import g
+from flask import flash
 import sqlite3
 import os
 
@@ -36,6 +37,7 @@ def add_article():
 	db.execute("insert into articles (title, content) values (?, ?)",
 			[request.form.get("title"), request.form.get("content")])
 	db.commit()
+	flash("New article was added")
 	return redirect(url_for("view_articles"))
 
 @flask_app.route("/articles/", methods =["GET"])
@@ -57,6 +59,7 @@ def view_article(art_id):
 
 @flask_app.route("/login/", methods=["GET"])
 def view_login():
+	flash("You must be logged in", "alert-danger")
 	return render_template("login.jinja")
 
 @flask_app.route("/login/", methods=["POST"])
@@ -66,14 +69,17 @@ def view_login_user():
 	if username == flask_app.config["USERNAME"] and \
 		password == flask_app.config["PASSWORD"]:
 		session["logged"] = True
+		flash("Login successful", "success")
 		return redirect(url_for("view_admin"))
 	else:
+		flash("Invalid credentials", "alert-danger")
 		return redirect(url_for("view_login"))
 
 
 @flask_app.route("/logout/", methods = ["POST"])
 def logout_user():
 	session.pop("logged")
+	flash("You were logged out", "success")
 	return redirect(url_for("view_welcome_page"))
 
 

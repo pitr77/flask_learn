@@ -1,0 +1,20 @@
+{% extends "_main.jinja" %}
+
+{% block title %}
+Login
+{% endblock title %}
+
+{% block main %}
+<form action="{{url_for("add_article")}}" method="POST">
+    {{ form.csrf_token }}
+    <p>
+        {{ form.title.label }} 
+        {{ form.title(size=20) }}
+    </p>
+    <p>
+        {{ form.content.label }} 
+        {{ form.content(size=20) }}
+    </p>
+    <input type="submit" value="Save">
+</form>
+{% endblock main %}

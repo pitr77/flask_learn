@@ -2,12 +2,20 @@ from os import environ
 from flask import Flask 
 from flask import render_template
 from flask import request
-from flask.helpers import url_for 
+from flask.helpers import url_for
+from wtforms import validators
+from wtforms.fields.simple import TextAreaField 
 from database import articles
 from flask import redirect
 from flask import session
 from flask import g
 from flask import flash
+from flask_wtf import FlaskForm
+from wtforms import StringField
+from wtforms import PasswordField
+from wtforms import TextAreaField
+from wtforms.validators import DataRequired, InputRequired
+
 import sqlite3
 import os
 
@@ -17,6 +25,19 @@ flask_app.config.from_pyfile("/flask/configs/default.py")
 if "MDBLOG_CONFIG" in os.environ:
 	flask_app.config.from_envvar("MDBLOG_CONFIG")
 
+### FORMS
+
+class LoginForm(FlaskForm):
+	username = StringField('Username', validators=[DataRequired()])
+	password = PasswordField('Password', validators=[DataRequired()])
+
+class ArticleForm(FlaskForm):
+	title = StringField('Title', validators=[DataRequired()])
+	content = TextAreaField('Content')
+
+
+
+### CONTROLLERS
 @flask_app.route("/")
 def view_welcome_page():
 	return render_template("welcome_page.jinja")
@@ -31,8 +52,22 @@ def view_admin():
 		return redirect(url_for("view_login"))
 	return render_template("admin.jinja")
 
+
+### ARTICLES
+
+@flask_app.route("/articles/new/", methods = ["GET"])
+def view_add_article():
+	if "logged" not in session:
+		flash("You must be logged in", "alert-danger")
+		return redirect(url_for("view_login"))
+	form = ArticleForm()
+	return render_template("aricle_editor.jinja, form=form")
+
 @flask_app.route("/articles/", methods =["POST"])
 def add_article():
+	if "logged" not in session:
+		flash("You must be logged in", "alert-danger")
+		return redirect(url_for("view_login"))
 	db = get_db()
 	db.execute("insert into articles (title, content) values (?, ?)",
 			[request.form.get("title"), request.form.get("content")])
@@ -59,20 +94,25 @@ def view_article(art_id):
 
 @flask_app.route("/login/", methods=["GET"])
 def view_login():
+	login_form = LoginForm()
 	flash("You must be logged in", "alert-danger")
-	return render_template("login.jinja")
+	return render_template("login.jinja", form=login_form)
 
 @flask_app.route("/login/", methods=["POST"])
 def view_login_user():
-	username = request.form["username"]
-	password = request.form["password"]
-	if username == flask_app.config["USERNAME"] and \
-		password == flask_app.config["PASSWORD"]:
-		session["logged"] = True
-		flash("Login successful", "success")
-		return redirect(url_for("view_admin"))
+	login_form = LoginForm(request.form)
+	if login_form.validate():
+		if login_form.username.data == flask_app.config["USERNAME"] and \
+			login_form.password.data == flask_app.config["PASSWORD"]:
+			session["logged"] = True
+			flash("Login successful", "success")
+			return redirect(url_for("view_admin"))
+		else:
+			flash("Invalid credentials", "alert-danger")
+			return redirect(url_for("view_login"))
 	else:
-		flash("Invalid credentials", "alert-danger")
+		for error in login_form.errors:
+			flash("{} is missing".format(error), "alert-danger")
 		return redirect(url_for("view_login"))
 
 
